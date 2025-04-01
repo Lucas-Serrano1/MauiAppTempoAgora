@@ -5,8 +5,6 @@ namespace MauiAppTempoAgora
 {
     public partial class MainPage : ContentPage
     {
-        int count = 0;
-
         public MainPage()
         {
             InitializeComponent();
@@ -16,42 +14,47 @@ namespace MauiAppTempoAgora
         {
             try
             {
-                if (!string.IsNullOrEmpty(txt_cidade.Text))
+                
+                if (string.IsNullOrWhiteSpace(txt_cidade.Text))
                 {
-                    Tempo? t = await DataService.GetPrevisao(txt_cidade.Text);
+                    await DisplayAlert("Atenção", "Por favor, digite o nome de uma cidade.", "OK");
+                    return;
+                }
 
-                    if (t != null)
-                    {
-                        string dados_previsao = "";
+                
+                lbl_res.Text = "Buscando dados...";
+                ((Button)sender).IsEnabled = false; 
 
-                        dados_previsao = $"Latitude: {t.lat} \n" +
-                                         $"Longitude: {t.lon} \n" +
-                                         $"Nascer do Sol: {t.sunrise} \n" +
-                                         $"Por do Sol: {t.sunset} \n" +
-                                         $"Temp Máx: {t.temp_max} \n" +
-                                         $"Temp Min: {t.temp_min} \n";
+                
+                Tempo? t = await DataService.GetPrevisao(txt_cidade.Text.Trim());
 
-                        lbl_res.Text = dados_previsao;
+                if (t != null)
+                {
+                    string dados_previsao = $"Condição Atual: {t.main} ({t.description})\n" +
+                                          $"Temperatura: {t.temp_min}°C ~ {t.temp_max}°C\n" +
+                                          $"Vento: {t.speed} m/s\n" +
+                                          $"Visibilidade: {t.visibility / 1000} km\n" +
+                                          $"Nascer do Sol: {t.sunrise}\n" +
+                                          $"Pôr do Sol: {t.sunset}\n" +
+                                          $"Localização: Lat {t.lat}, Lon {t.lon}";
 
-                    }
-                    else
-                    {
-
-                        lbl_res.Text = "Sem dados de Previsão";
-                    }
-
+                    lbl_res.Text = dados_previsao;
                 }
                 else
                 {
-                    lbl_res.Text = "Preencha a cidade.";
+                    await DisplayAlert("Aviso", "Dados indisponíveis para esta cidade.", "OK");
+                    lbl_res.Text = string.Empty;
                 }
-
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ops", ex.Message, "OK");
+                await DisplayAlert("Erro", ex.Message, "OK");
+                lbl_res.Text = string.Empty;
+            }
+            finally
+            {
+                ((Button)sender).IsEnabled = true; 
             }
         }
     }
-
 }
